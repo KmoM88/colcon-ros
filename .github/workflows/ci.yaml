@@ -3,7 +3,7 @@ name: Run tests
 
 on:
   push:
-    branches: ['master']
+    branches: ['master', 'KmoM88/tmp-path-ci']
   pull_request:
 
 jobs:
