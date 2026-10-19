@@ -41,6 +41,31 @@ class AmentPythonBuildTask(TaskExtensionPoint):
             'ament_prefix_path', Path(args.install_base),
             self.context.pkg.name, 'AMENT_PREFIX_PATH', '', mode='prepend')
 
+        setup_py = Path(args.path) / 'setup.py'
+        pyproject_toml = Path(args.path) / 'pyproject.toml'
+        if not setup_py.is_file() and pyproject_toml.is_file():
+            # Modern PEP 517 / 621 Python standard project
+            try:
+                from colcon_core.task.python_project.build import \
+                    PythonProjectBuildTask
+            except ImportError:
+                logger.error(
+                    f"Package '{self.context.pkg.name}' uses pyproject.toml "
+                    'but colcon-core does not support python_project')
+                return 1
+            extension = PythonProjectBuildTask()
+            extension.set_context(context=self.context)
+
+            create_file(
+                args,
+                'share/ament_index/resource_index/packages/'
+                f'{self.context.pkg.name}')
+            install(
+                args, 'package.xml',
+                f'share/{self.context.pkg.name}/package.xml')
+
+            return await extension.build(additional_hooks=[additional_hooks])
+
         # get options from the Python manifest
         try:
             env = await get_command_environment(
